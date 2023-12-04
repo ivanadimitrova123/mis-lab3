@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "800831134678",
+    "project_id": "lab3-mis-fcf55",
+    "storage_bucket": "lab3-mis-fcf55.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:800831134678:android:a79796590eb5266c58a277",
+        "android_client_info": {
+          "package_name": "com.example.lab3"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAW2mhwOqN1MuYF-v0HnWKY4Hk61tgyAhs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
