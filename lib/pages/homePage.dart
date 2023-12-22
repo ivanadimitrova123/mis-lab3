@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lab3/auth.dart';
+import 'calendar_page.dart';
+import 'package:intl/intl.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -54,40 +56,40 @@ class _HomePageState extends State<HomePage> {
 
   Widget buildAddExamSection() {
     return Container(
-      padding: EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextField(
             controller: subjectController,
-            decoration: InputDecoration(labelText: 'Предмет'),
+            decoration: const InputDecoration(labelText: 'Предмет'),
           ),
-          SizedBox(height: 8.0),
+          const SizedBox(height: 8.0),
           TextButton(
             onPressed: () => _selectDate(context),
-            child: Text('Избери Датум'),
+            child: const Text('Избери Датум'),
           ),
-          SizedBox(height: 8.0),
+          const SizedBox(height: 8.0),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: hourController,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: 'Час'),
+                  decoration: const InputDecoration(labelText: 'Час'),
                 ),
               ),
-              SizedBox(width: 16.0),
+              const SizedBox(width: 16.0),
               Expanded(
                 child: TextField(
                   controller: minuteController,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: 'Минути'),
+                  decoration: const InputDecoration(labelText: 'Минути'),
                 ),
               ),
             ],
           ),
-          SizedBox(height: 16.0),
+          const SizedBox(height: 16.0),
           ElevatedButton(
             onPressed: () {
               _addExam();
@@ -95,9 +97,9 @@ class _HomePageState extends State<HomePage> {
                 isAddingExam = false;
               });
             },
-            child: Text('Додади'),
+            child: const Text('Додади'),
           ),
-          Divider(
+          const Divider(
             thickness: 2.0,
             color: Colors.black,
           ),
@@ -125,7 +127,7 @@ class _HomePageState extends State<HomePage> {
       exams.add(
         Exam(
           subject: subjectController.text,
-          date: "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
+          date: selectedDate,
           time: hourController.text,
           minutes: minuteController.text,
         ),
@@ -143,6 +145,17 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: title(),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_today),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CalendarPage(exams: exams),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
@@ -164,7 +177,7 @@ class _HomePageState extends State<HomePage> {
             Expanded(
               child: ExamGridView(exams: exams),
             ),
-            SizedBox(height: 20), // Add some space between ExamGridView and the bottom buttons
+            const SizedBox(height: 20),
             userUid(),
             signOutButton(),
           ],
@@ -207,12 +220,12 @@ class ExamGridView extends StatelessWidget {
               children: [
                 Text(
                   'Предмет: ${exams[index].subject}',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 8.0),
+                const SizedBox(height: 8.0),
                 Text(
-                  'На: ${exams[index].date}. Во: ${exams[index].time} часот и ${exams[index].minutes} мин.',
-                  style: TextStyle(color: Colors.grey),
+                  'На: ${exams[index].formattedDate}. Во: ${exams[index].time} часот и ${exams[index].minutes} мин.',
+                  style: const TextStyle(color: Colors.grey),
                 ),
               ],
             ),
@@ -225,7 +238,7 @@ class ExamGridView extends StatelessWidget {
 
 class Exam {
   final String subject;
-  final String date;
+  final DateTime date;
   final String time;
   final String minutes;
 
@@ -234,5 +247,8 @@ class Exam {
     required this.date,
     required this.time,
     required this.minutes,
-  });
+  }
+  );
+  String get formattedDate => DateFormat.yMd().format(date);
+
 }
