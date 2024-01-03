@@ -1,12 +1,16 @@
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lab3/auth.dart';
+import 'package:lab3/pages/notification_controller.dart';
 import 'calendar_page.dart';
 import 'package:intl/intl.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -34,6 +38,17 @@ class _HomePageState extends State<HomePage> {
   TextEditingController hourController = TextEditingController();
   TextEditingController minuteController = TextEditingController();
   bool isAddingExam = false;
+
+  @override
+  void initState(){
+    super.initState();
+    AwesomeNotifications().setListeners(
+        onActionReceivedMethod: NotificationController.onActionReceivedMethod,
+        onNotificationCreatedMethod: NotificationController.onNotificationCreatedMethod,
+        onNotificationDisplayedMethod: NotificationController.onNotificationDisplayedMethod,
+        onDismissActionReceivedMethod: NotificationController.onDismissedReceivedMethod
+    );
+  }
 
   Future<void> signOut() async {
     await Auth().signOut();
@@ -96,6 +111,13 @@ class _HomePageState extends State<HomePage> {
               setState(() {
                 isAddingExam = false;
               });
+              AwesomeNotifications().createNotification(content: NotificationContent(
+                id: 1,
+                channelKey: "basic_channel",
+                title: "Hello",
+                body: "You have successfully added an exam",
+              ),
+              );
             },
             child: const Text('Додади'),
           ),
@@ -121,7 +143,6 @@ class _HomePageState extends State<HomePage> {
       });
     }
   }
-
   void _addExam() {
     setState(() {
       exams.add(
@@ -136,6 +157,7 @@ class _HomePageState extends State<HomePage> {
       subjectController.clear();
       hourController.clear();
       minuteController.clear();
+
     });
   }
 
@@ -249,6 +271,15 @@ class Exam {
     required this.minutes,
   }
   );
+  /*String formattedDate() {
+    return '${date.year}-${_twoDigits(date.month)}-${_twoDigits(date.day)}';
+  }
+
+  String _twoDigits(int n) {
+    if (n >= 10) return '$n';
+    return '0$n';
+  }*/
   String get formattedDate => DateFormat.yMd().format(date);
+
 
 }
