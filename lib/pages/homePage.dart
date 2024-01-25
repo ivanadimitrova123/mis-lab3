@@ -5,6 +5,9 @@ import 'package:lab3/auth.dart';
 import 'package:lab3/pages/notification_controller.dart';
 import 'calendar_page.dart';
 import 'package:intl/intl.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,11 +40,28 @@ class _HomePageState extends State<HomePage> {
   DateTime selectedDate = DateTime.now();
   TextEditingController hourController = TextEditingController();
   TextEditingController minuteController = TextEditingController();
+  TextEditingController latitudeController = TextEditingController();
+  TextEditingController longitudeController = TextEditingController();
+
   bool isAddingExam = false;
+  LatLng userLocation = const LatLng(0, 0);
+
+
+  Future<void> getCurrentLocation() async {
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+    setState(() {
+      userLocation = LatLng(position.latitude, position.longitude);
+    });
+  }
+
+
 
   @override
   void initState(){
     super.initState();
+    getCurrentLocation();
     AwesomeNotifications().setListeners(
         onActionReceivedMethod: NotificationController.onActionReceivedMethod,
         onNotificationCreatedMethod: NotificationController.onNotificationCreatedMethod,
@@ -49,7 +69,6 @@ class _HomePageState extends State<HomePage> {
         onDismissActionReceivedMethod: NotificationController.onDismissedReceivedMethod
     );
   }
-
   Future<void> signOut() async {
     await Auth().signOut();
   }
@@ -104,6 +123,26 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
+          const SizedBox(height: 8.0),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: latitudeController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Latitude'),
+                ),
+              ),
+              const SizedBox(width: 16.0),
+              Expanded(
+                child: TextField(
+                  controller: longitudeController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Longitude'),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 16.0),
           ElevatedButton(
             onPressed: () {
@@ -143,7 +182,7 @@ class _HomePageState extends State<HomePage> {
       });
     }
   }
-  void _addExam() {
+  Future<void> _addExam() async {
     setState(() {
       exams.add(
         Exam(
@@ -151,14 +190,48 @@ class _HomePageState extends State<HomePage> {
           date: selectedDate,
           time: hourController.text,
           minutes: minuteController.text,
+          latitude: double.parse(latitudeController.text),
+          longitude: double.parse(longitudeController.text),
         ),
       );
 
       subjectController.clear();
       hourController.clear();
       minuteController.clear();
-
+      latitudeController.clear();
+      longitudeController.clear();
     });
+
+    double distanceInMeters = Geolocator.distanceBetween(
+      userLocation.latitude,
+      userLocation.longitude,
+      exams.last.latitude,
+      exams.last.longitude,
+    );
+
+    if (distanceInMeters <= 100) {
+      AwesomeNotifications().createNotification(content: NotificationContent(
+        id: 2,
+        channelKey: "basic_channel",
+        title: "Location Reminder",
+        body: "You have an upcoming exam near your current location",
+      ));
+    }
+
+  }
+
+  void launchGoogleMaps(List<Exam> exams) async {
+    // Build the URL to open Google Maps with multiple markers
+    String markers = exams.map((exam) {
+      return "${exam.latitude},${exam.longitude}";
+    }).join('&');
+
+   String googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=$markers';
+    if (await canLaunch(googleMapsUrl)) {
+      await launch(googleMapsUrl);
+    } else {
+      // Handle error
+    }
   }
 
   @override
@@ -184,6 +257,12 @@ class _HomePageState extends State<HomePage> {
               setState(() {
                 isAddingExam = true;
               });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.map),
+            onPressed: () {
+              launchGoogleMaps(exams);
             },
           ),
         ],
@@ -213,6 +292,17 @@ class ExamGridView extends StatelessWidget {
   final List<Exam> exams;
 
   const ExamGridView({Key? key, required this.exams}) : super(key: key);
+
+  void launchGoogleMapsDirections(Exam exam) async {
+    String destination = '${exam.latitude},${exam.longitude}';
+    String googleMapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=$destination';
+
+    if (await canLaunch(googleMapsUrl)) {
+      await launch(googleMapsUrl);
+    } else {
+      // Handle error
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -249,6 +339,12 @@ class ExamGridView extends StatelessWidget {
                   'На: ${exams[index].formattedDate}. Во: ${exams[index].time} часот и ${exams[index].minutes} мин.',
                   style: const TextStyle(color: Colors.grey),
                 ),
+                ElevatedButton(
+                  onPressed: () {
+                    launchGoogleMapsDirections(exams[index]);
+                  },
+                  child: const Text('Show Route'),
+                ),
               ],
             ),
           ),
@@ -263,22 +359,27 @@ class Exam {
   final DateTime date;
   final String time;
   final String minutes;
+  final double latitude;
+  final double longitude;
+
+  Exam.copy(Exam original, {double? newLatitude, double? newLongitude})
+      : subject = original.subject,
+        date = original.date,
+        time = original.time,
+        minutes = original.minutes,
+        latitude = newLatitude ?? original.latitude,
+        longitude = newLongitude ?? original.longitude;
+
 
   Exam({
     required this.subject,
     required this.date,
     required this.time,
     required this.minutes,
+    required this.latitude,
+    required this.longitude,
   }
   );
-  /*String formattedDate() {
-    return '${date.year}-${_twoDigits(date.month)}-${_twoDigits(date.day)}';
-  }
-
-  String _twoDigits(int n) {
-    if (n >= 10) return '$n';
-    return '0$n';
-  }*/
   String get formattedDate => DateFormat.yMd().format(date);
 
 

@@ -1,5 +1,6 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:lab3/widget_tree.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -25,6 +26,7 @@ Future<void> main() async {
   }else {
     print("Notification permission is already granted.");
   }
+
   runApp(const MyApp());
 }
 
